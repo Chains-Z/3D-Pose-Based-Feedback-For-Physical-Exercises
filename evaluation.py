@@ -54,7 +54,7 @@ def main_eval(time, opt, data_test, separated=False, model_version=''):
         model_path = opt.model_dir
         # import pdb; pdb.set_trace()
         # model.load_state_dict(torch.load(model_path))
-        model.load_state_dict(torch.load(opt.model_dir))
+        model.load_state_dict(torch.load(opt.model_dir, map_location='cuda:0'))
 
         model_id = model_path[-19:-3] if model_path[0] != 'p' else 'pretrained'
 

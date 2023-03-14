@@ -9,3 +9,5 @@ Running_logs/*
 # Python Tools for Visual Studio (PTVS)
 *.pyc
 
+#virual env
+3d_pose-env

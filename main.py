@@ -145,7 +145,7 @@ def main(opt, model_version):
 
     # Test  
     model = models[model_version]
-    model.load_state_dict(torch.load(opt.model_dir))
+    model.load_state_dict(torch.load(opt.model_dir, map_location='cuda:0'))
     model.cuda()
 
     with torch.no_grad():
@@ -217,7 +217,7 @@ def main(opt, model_version):
 
 
 if __name__ == "__main__":
-    torch.cuda.set_device(3)
+    torch.cuda.set_device(0)
     print('GPU Index: {}'.format(torch.cuda.current_device()))
     
     model_options = ['Separated_Classifier_Simple', 'Separated_Classifier', 'Separated_Corrector', 'Combined_wo_Feedback', 'Ours']
