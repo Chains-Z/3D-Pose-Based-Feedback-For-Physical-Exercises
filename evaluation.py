@@ -84,8 +84,8 @@ def main_eval(time, opt, data_test, separated=False, model_version=''):
                     _, pred_out = torch.max(model(outputs, labels, Use_label=False, random_one_hot=use_random_one_hot)[2].data, 1)
                     
                     ''' Visulization '''
-                    # whether_plot = input('Do you wanna plot the results?\n(y/n)')
-                    whether_plot = 'n'
+                    whether_plot = input('Do you wanna plot the results?\n(y/n)')
+                    # whether_plot = 'n'
                     if whether_plot == 'y':
                         inputs_raw = [test_loader.dataset.inputs_raw[int(i)] for i in batch_id]
                         targets_raw = [test_loader.dataset.targets[int(i)] for i in batch_id]

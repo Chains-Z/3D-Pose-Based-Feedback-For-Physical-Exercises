@@ -16,13 +16,18 @@ def preprocess_data(poses_gt):
             data_3D = pickle.load(f)
     joint_names, subject_1_pose, bone_connections = params(data_3D)
     pose_dict = {'joints':joint_names,'default':subject_1_pose,'links':bone_connections}
-    poses_gt = centralize_normalize_rotate_poses(poses_gt,pose_dict)
+    poses_gt = torch.from_numpy(poses_gt)
+    poses_gt = centralize_normalize_rotate_poses(poses_gt,pose_dict).numpy()
     
     poses_gt = poses_gt[:, :, joints]
-    inputs_raw = poses_gt.reshape(-1, poses_gt.shape[1] * poses_gt.shape[2]).T
+    inputs_raw = [poses_gt.reshape(-1, poses_gt.shape[1] * poses_gt.shape[2]).T]
     inputs = [dct_2d(torch.from_numpy(x))[:, :dct_n].numpy() if x.shape[1] >= dct_n else
                        dct_2d(torch.nn.ZeroPad2d((0, dct_n - x.shape[1], 0, 0))(torch.from_numpy(x))).numpy()
                        for x in inputs_raw]
+    
+    inputs = torch.from_numpy(np.asarray(inputs))
+    inputs = inputs.cuda().float()
+
     return inputs_raw, inputs
 
 def get_result(opt,model,poses_gt):
@@ -52,7 +57,7 @@ def get_result(opt,model,poses_gt):
 
             for t in range(length):
                 # change figure path to Visual
-                fig_loc ="Visual"+"/Evaluation/"+opt.datetime
+                fig_loc ="Visual/"+opt.datetime
                 fig_loc += "/" + str(i) + "_" + str(label.item())
                 # if label > 8:
                 if not os.path.exists(fig_loc):
@@ -85,19 +90,28 @@ def main(opt, model_version):
         model.cuda()
         model.eval()
 
-    context = zmq.Context()
-    socket = context.socket(zmq.REP)
-    socket.bind("tcp://*:5555")
-    count = 1
-    while True:
-        #  Wait for next request from client
-        poses_gt = pickle.loads(socket.recv())
-        print(f"Received count: {count}\n")
-
+    try:
+        with open("data/kinect/data.pickle","rb") as f:
+            poses_gt = pickle.load(f)
+        print('Loading reserved data.')
         get_result(opt,model,poses_gt)
-        #  Send reply back to client
-        socket.send(b"nothing")
-        count = count + 1
+    except FileNotFoundError:
+        context = zmq.Context()
+        socket = context.socket(zmq.REP)
+        socket.bind("tcp://*:5555")
+        count = 1
+        while True:
+            #  Wait for next request from client
+            print("Waiting for data")
+            poses_gt = pickle.loads(socket.recv())
+            with open("data/kinect/data.pickle","wb") as f:
+                pickle.dump(poses_gt,f)
+            print(f"Received request: {count}\n {poses_gt}\n")
+
+            get_result(opt,model,poses_gt)
+            #  Send reply back to client
+            socket.send(b"nothing")
+            count = count + 1
 
     
 
